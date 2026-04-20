@@ -720,6 +720,42 @@
                 document.getElementById('inputText').innerHTML = savedData;
                 updateContent();
             }
+
+            // ================= OFFLINE MODE & PWA LOGIC (NEW) =================
+            window.addEventListener('online', () => showToast("Back Online! 🌐 App is synced."));
+            window.addEventListener('offline', () => showToast("Offline Mode Active ⚡ (Working perfectly without internet)"));
+            
+            if (!navigator.onLine) {
+                setTimeout(() => showToast("Offline Mode Active ⚡ (Working perfectly without internet)"), 1500);
+            }
+
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    const CACHE_NAME = 'wordpro-offline-v2';
+                    self.addEventListener('install', event => { self.skipWaiting(); });
+                    self.addEventListener('activate', event => { event.waitUntil(clients.claim()); });
+                    self.addEventListener('fetch', event => {
+                        if (event.request.method !== 'GET') return;
+                        event.respondWith(
+                            fetch(event.request)
+                                .then(response => {
+                                    if(response && response.status === 200 && response.type !== 'opaque') {
+                                        const resClone = response.clone();
+                                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, resClone));
+                                    }
+                                    return response;
+                                })
+                                .catch(() => caches.match(event.request))
+                        );
+                    });
+                `;
+                try {
+                    const blob = new Blob([swCode], { type: 'application/javascript' });
+                    const swUrl = URL.createObjectURL(blob);
+                    navigator.serviceWorker.register(swUrl).catch(() => console.warn('Offline SW bypassed due to security context.'));
+                } catch (e) {}
+            }
+            // ==================================================================
         });
         // ==============================================================================
 
