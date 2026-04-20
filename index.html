@@ -39,26 +39,31 @@
         html { scroll-behavior: smooth; }
         
         body {
-            /* Default Standard Font */
+            /* Default Standard Font & Modernized Light Theme */
             font-family: 'Calibri', 'Hind Siliguri', sans-serif;
-            background-color: #f1f5f9; 
+            background-color: #f4f7fb; 
             margin: 0;
             overflow-x: hidden; 
             overflow-y: auto; 
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.4s ease, color 0.4s ease;
         }
 
-        /* --- Dark Mode Styles --- */
-        body.dark-mode { background-color: #0f172a; color: #f8fafc; }
-        body.dark-mode .app-header { background-color: #1e293b; border-bottom-color: #334155; }
-        body.dark-mode .app-toolbar { background-color: #0f172a; border-bottom-color: #334155; }
-        body.dark-mode .editor-container { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); background-color: #1e293b; color: #f8fafc; border-color: #334155;}
-        body.dark-mode .toolbar-btn-light { background-color: #334155; color: #e2e8f0; border-color: #475569; }
-        body.dark-mode .toolbar-btn-light:hover { background-color: #475569; color: #fff; }
-        body.dark-mode .modal-bg { background-color: #1e293b; color: #f8fafc; }
-        body.dark-mode .history-item { background-color: #334155; border-color: #475569; }
-        body.dark-mode .status-bar { background-color: #1e293b; border-top-color: #334155; }
-        body.dark-mode select { background-color: #1e293b; color: #e2e8f0; }
+        /* --- Modernized Dark Mode Styles (OLED/Deep Slate) --- */
+        body.dark-mode { background-color: #09090b; color: #f8fafc; }
+        body.dark-mode .app-header { background-color: #09090b; border-bottom-color: #27272a; }
+        body.dark-mode .app-toolbar { background-color: #09090b; border-bottom-color: #27272a; }
+        body.dark-mode .editor-container, body.dark-mode .a4-paper { background-color: #18181b; color: #ffffff; border-color: #3f3f46; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); }
+        body.dark-mode .toolbar-btn-light { background-color: #18181b; color: #e4e4e7; border-color: #3f3f46; }
+        body.dark-mode .toolbar-btn-light:hover { background-color: #27272a; color: #ffffff; border-color: #52525b; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
+        body.dark-mode .modal-bg { background-color: #18181b; color: #f8fafc; border: 1px solid #3f3f46; }
+        body.dark-mode .history-item { background-color: #27272a; border-color: #3f3f46; }
+        body.dark-mode .status-bar { background-color: #09090b; border-top-color: #27272a; }
+        body.dark-mode select { background-color: #18181b; color: #e4e4e7; }
+        body.dark-mode .bg-white.dark\:bg-slate-800 { background-color: #18181b !important; border-color: #3f3f46 !important; }
+        body.dark-mode .bg-blue-50.dark\:bg-blue-900\/40 { background-color: rgba(30, 58, 138, 0.15) !important; border-color: rgba(30, 58, 138, 0.3) !important; }
+        body.dark-mode .text-3d { text-shadow: 1px 1px 0px #3f3f46, 2px 2px 0px #27272a; }
+        body.dark-mode .text-blue-600 { color: #60a5fa !important; }
+        body.dark-mode #inputText:empty:before { color: #52525b; }
 
         /* --- Custom Scrollbar --- */
         ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -92,9 +97,10 @@
         /* --- Main Editor Container --- */
         .editor-container {
             background-color: #ffffff;
-            border: 1px solid #cbd5e1; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            border: 1px solid #cbd5e1; box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.05), 0 5px 15px -5px rgba(0, 0, 0, 0.02);
             margin: 0 auto; outline: none; transition: all 0.3s;
             position: relative; box-sizing: border-box;
+            border-radius: 8px;
             /* Dimensions dynamically handled by JS */
         }
         .editor-container:focus-within { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
@@ -1131,24 +1137,71 @@
 
         inputText.addEventListener('paste', (e) => {
             e.preventDefault();
-            let text = (e.originalEvent || e).clipboardData.getData('text/plain');
+            const clipboardData = e.clipboardData || window.clipboardData || (e.originalEvent && e.originalEvent.clipboardData);
             
-            text = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); 
-            text = text.replace(/\*(.*?)\*/g, '<i>$1</i>'); 
-            text = text.replace(/#(.*?)\n/g, '<b>$1</b><br>'); 
-            text = text.replace(/\n/g, '<br>'); 
-
-            document.execCommand('insertHTML', false, text);
+            // HTML ডেটা খুঁজবে যাতে ChatGPT/Gemini/Claude এর সব ফরমেট (Bold, Icons, Math) সেভ থাকে
+            const htmlData = clipboardData.getData('text/html');
+            const plainText = clipboardData.getData('text/plain');
+            
+            if (htmlData) {
+                // অরিজিনাল ফরমেট সহ পেস্ট করবে
+                document.execCommand('insertHTML', false, htmlData);
+            } else if (plainText) {
+                // প্লেইন টেক্সট বা মার্কডাউনের জন্য আগের ফলব্যাক লজিক
+                let text = plainText;
+                text = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); 
+                text = text.replace(/\*(.*?)\*/g, '<i>$1</i>'); 
+                text = text.replace(/#(.*?)\n/g, '<b>$1</b><br>'); 
+                text = text.replace(/\n/g, '<br>'); 
+                document.execCommand('insertHTML', false, text);
+            }
+            
             updateContent();
         });
 
         inputText.addEventListener('input', updateContent);
 
+        // ================= HISTORY AUTO-SAVE LOGIC (NEW) =================
+        let historySaveTimeout;
+        function autoSaveToHistory() {
+            const content = inputText.innerHTML;
+            if (!content || content.trim() === '' || content === '<br>') return;
+            
+            let histories = JSON.parse(localStorage.getItem('wordProHistories') || '[]');
+            
+            // Prevent saving if it's exactly the same as the most recent one
+            if (histories.length > 0 && histories[0].content === content) return;
+
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-GB') + " " + now.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+            
+            // Generate a small title from the content
+            let tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            let plainText = tempDiv.innerText || "";
+            let title = plainText.substring(0, 35).trim() + (plainText.length > 35 ? "..." : "");
+            if(!title) title = "Draft - " + dateStr;
+
+            histories.unshift({ id: Date.now(), title: title, date: dateStr, content: content });
+            
+            // Keep only the last 3 histories
+            if (histories.length > 3) {
+                histories = histories.slice(0, 3);
+            }
+            
+            localStorage.setItem('wordProHistories', JSON.stringify(histories));
+        }
+        // ====================================================================
+
         function updateContent() {
             formattedContent.innerHTML = inputText.innerHTML;
             
-            // Auto-Save feature
+            // Immediate Session Auto-Save
             localStorage.setItem('wordPro_autosave', inputText.innerHTML);
+
+            // Trigger history auto-save logic (3 seconds after typing pauses)
+            clearTimeout(historySaveTimeout);
+            historySaveTimeout = setTimeout(autoSaveToHistory, 3000);
             
             // Sync global text settings to PDF screen
             formattedContent.style.fontFamily = inputText.style.fontFamily;
@@ -1170,7 +1223,7 @@
             bindImageEvents(); // Attach events to any new or restored images
         }
 
-        // ================= DOCUMENT OVERLAY LOGIC (NEW: PDF TO IMAGE EXTRACTOR) =================
+        // ================= DOCUMENT OVERLAY LOGIC (PDF TO IMAGE EXTRACTOR) =================
         window.handleDocumentUpload = async function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1204,8 +1257,7 @@
                     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
                     const imgData = canvas.toDataURL("image/jpeg", 0.95);
                     
-                    // 100% Fix for alternating blank pages: 
-                    // Replaced 'page-break-after' with 'page-break-inside: avoid' and restricted max-height to fit within A4 safely.
+                    // 100% Fix for alternating blank pages
                     htmlToInsert += `<div style="display: block; text-align: center; margin-top: 12mm; margin-bottom: 5mm; page-break-inside: avoid;"><img src="${imgData}" style="max-width: 100%; max-height: 245mm; width: auto; height: auto; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" alt="PDF Page ${i}"/></div>`;
                 }
                 
@@ -1445,7 +1497,7 @@
                 showToast("Header hidden!");
             }
         });
-        
+
         // ================= WATERMARK TOGGLE SYSTEM (NEW) =================
         watermarkToggleBtn.addEventListener('click', () => {
             isWatermarkActive = !isWatermarkActive;
@@ -1531,8 +1583,8 @@
                     // ================= PDF WATERMARK INJECTION =================
                     // Only run if Watermark is toggled ON
                     if (watermarkBase64 && isWatermarkActive) {
-                        var stampW = 40; // 40mm width (Increased Size)
-                        var stampH = 40; // 40mm height (Increased Size)
+                        var stampW = 40; // 40mm width
+                        var stampH = 40; // 40mm height
                         var stampX = pw - currentMargin.r - stampW;
                         var stampY = ph - currentMargin.b - stampH;
                         
